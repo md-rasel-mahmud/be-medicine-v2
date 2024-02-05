@@ -1,13 +1,46 @@
 const Purchase = require("../models/purchaseModel");
 const asyncHandler = require("express-async-handler");
-const Medicine = require("../models/medicineModel");
-const User = require("../models/userModel");
-const Supplier = require("../models/supplierModel");
 const Stock = require("../models/stockModel");
 
 // @GET ALL PURCHASE
 exports.getAllPurchase = asyncHandler(async (req, res) => {
-  const result = await Purchase.find().select({ __v: 0 });
+  const { page, limit } = req.query;
+
+  if (page && limit) {
+    const result = await Purchase.find()
+      .populate({
+        path: "stock",
+        populate: {
+          path: "medicines.medicine",
+          model: "Medicine",
+          select: "-__v",
+        },
+        select: "-__v",
+      })
+      .populate("supplier", "-__v")
+      .populate("user", "-__v -password")
+      .select({ __v: 0 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
+
+    return res.status(200).json({ result });
+  }
+
+  // POPULATE THE STOCK, MEDICINE, USER
+  const result = await Purchase.find()
+    .populate({
+      path: "stock",
+      populate: {
+        path: "medicines.medicine",
+        model: "Medicine",
+        select: "-__v",
+      },
+      select: "-__v",
+    })
+    .populate("supplier", "-__v")
+    .populate("user", "-__v -password")
+    .select({ __v: 0 });
+
   res.status(200).json({ result });
 });
 
@@ -29,14 +62,16 @@ exports.createPurchase = asyncHandler(async (req, res) => {
     description,
     purchaseStocks,
     supplier,
-    user,
     shippingCost,
     globalDiscount,
   } = req.body;
 
   // SAVE THE MEDICINE TO THE STOCK
-  const { _id: insertedStockId } = await Stock.save(purchaseStocks);
+  const newStock = new Stock(purchaseStocks);
+  const insertedStock = await newStock.save();
+  const insertedStockId = insertedStock._id;
 
+  // PREPARE THE PURCHASE DATA
   const newPurchase = new Purchase({
     purchaseDate,
     purchaseNo,
@@ -44,12 +79,26 @@ exports.createPurchase = asyncHandler(async (req, res) => {
     description,
     stock: insertedStockId,
     supplier,
-    user,
+    user: req.user._id,
     shippingCost,
     globalDiscount,
   });
 
-  const result = await newPurchase.save();
+  // SAVE THE PURCHASE AND POPULATE THE STOCK, MEDICINES.MEDICINE, SUPPLIER, USER
+  const insertPurchaseData = await newPurchase.save();
+  const result = await Purchase.findById(insertPurchaseData._id)
+    .populate({
+      path: "stock",
+      populate: {
+        path: "medicines.medicine",
+        model: "Medicine",
+        select: "-__v",
+      },
+      select: "-__v",
+    })
+    .populate("supplier", "-__v")
+    .populate("user", "-__v -password")
+    .select({ __v: 0 });
 
   res.status(201).json({ result, message: "Purchased successfully" });
 });
@@ -65,11 +114,20 @@ exports.updatePurchase = asyncHandler(async (req, res) => {
       description,
     },
     { new: true }
-  );
+  )
+    .populate({
+      path: "stock",
+      populate: {
+        path: "medicines.medicine",
+        model: "Medicine",
+        select: "-__v",
+      },
+      select: "-__v",
+    })
+    .populate("supplier", "-__v")
+    .populate("user", "-__v -password");
 
   res.status(200).json({ result, message: "Purchase updated successfully" });
-
-  res.send("Update Purchase");
 });
 
 // @DELETE PURCHASE

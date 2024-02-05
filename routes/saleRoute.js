@@ -8,10 +8,11 @@ const {
   createSale,
 } = require("../controllers/saleController");
 
-router.get("/sales", userAuthenticate, getSales);
-router.post("/sales", userAuthenticate, createSale);
-router.get("/sales/:id", userAuthenticate, getSingleSale);
-router.put("/sales/:id", userAuthenticate, updateSale);
-router.delete("/sales/:id", userAuthenticate, deleteSale);
+// =================== ROUTES ===================
+router.get("/sale/all", userAuthenticate, getSales);
+router.post("/sale", userAuthenticate, createSale);
+router.get("/sale/:id", userAuthenticate, getSingleSale);
+router.put("/sale/:id", userAuthenticate, updateSale);
+router.delete("/sale/:id", userAuthenticate, deleteSale);
 
 module.exports = router;

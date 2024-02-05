@@ -1,15 +1,21 @@
 const router = require("express").Router();
-const { userAuthenticate } = require("../middlewares/authenticate");
+const {
+  userAuthenticate,
+  adminAuthenticate,
+} = require("../middlewares/authenticate");
 const {
   getStocks,
   updateStock,
   deleteStock,
   createStock,
+  getSingleStock,
 } = require("../controllers/stockController");
 
+// =================== ROUTES ===================
 router.get("/stock/all", userAuthenticate, getStocks);
-router.post("/stock", userAuthenticate, createStock);
-router.put("/stock/:id", userAuthenticate, updateStock);
-router.delete("/stock/:id", userAuthenticate, deleteStock);
+router.get("/stock/:id", userAuthenticate, getSingleStock);
+router.post("/stock", adminAuthenticate, createStock);
+router.put("/stock/:id", adminAuthenticate, updateStock);
+router.delete("/stock/:id", adminAuthenticate, deleteStock);
 
 module.exports = router;

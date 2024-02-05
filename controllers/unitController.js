@@ -3,7 +3,7 @@ const Unit = require("../models/unitModel");
 
 // @GET ALL UNIT
 exports.getAllUnit = asyncHandler(async (req, res) => {
-  //   // -> GET ALL UNIT
+  // -> GET ALL UNIT
   const result = await Unit.find().select({ __v: 0 });
 
   res.status(200).json({ result });

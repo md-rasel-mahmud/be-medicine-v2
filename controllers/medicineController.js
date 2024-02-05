@@ -2,9 +2,30 @@ const Medicine = require("../models/medicineModel");
 const asyncHandler = require("express-async-handler");
 
 // @GET ALL MEDICINE
-exports.getMedicine = asyncHandler(async (req, res) => {
-  const result = await Medicine.find().select({ __v: 0 });
-  res.status(200).json({ result });
+exports.getMedicines = asyncHandler(async (req, res) => {
+  const { page, limit } = req.query;
+
+  // -> WITHOUT PAGINATION
+  if (!page || !limit) {
+    const result = await Medicine.find().select({ __v: 0 });
+
+    return res.status(200).json({ result });
+  }
+
+  // -> PAGINATION
+  const result = await Medicine.find()
+    .select({ __v: 0 })
+    .limit(limit * 1)
+    .skip((page - 1) * limit);
+
+  res.status(200).json({
+    result,
+    pagination: {
+      currentPage: page,
+      totalPages: Math.ceil((await Medicine.countDocuments()) / limit),
+      totalData: await Medicine.countDocuments(),
+    },
+  });
 });
 
 // @GET SINGLE MEDICINE BY ID

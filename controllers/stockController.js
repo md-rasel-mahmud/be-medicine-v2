@@ -5,6 +5,7 @@ const Stock = require("../models/stockModel");
 exports.getStocks = asyncHandler(async (req, res) => {
   const { page, limit } = req.query;
 
+  // -> WITHOUT PAGINATION
   if (!page || !limit) {
     const result = await Stock.find()
       .select({ __v: 0 })
@@ -13,6 +14,8 @@ exports.getStocks = asyncHandler(async (req, res) => {
 
     return res.status(200).json({ result });
   }
+
+  // -> PAGINATION
   const result = await Stock.find()
     .select({ __v: 0 })
     .sort({ stockAddedAt: -1 })
@@ -20,7 +23,24 @@ exports.getStocks = asyncHandler(async (req, res) => {
     .limit(limit * 1)
     .skip((page - 1) * limit);
 
-  res.status(200).json({ result });
+  res.status(200).json({
+    result,
+    pagination: {
+      currentPage: page,
+      totalPages: Math.ceil((await Stock.countDocuments()) / limit),
+      totalData: await Stock.countDocuments(),
+    },
+  });
+});
+
+// @GET SINGLE STOCK BY ID
+exports.getSingleStock = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const result = await Stock.findById(id)
+    .select({ __v: 0 })
+    .populate("medicines.medicine", "name groupName -_id");
+
+  res.status(200).json({ result: result || {} });
 });
 
 // @UPDATE STOCK
@@ -46,6 +66,6 @@ exports.deleteStock = asyncHandler(async (req, res) => {
 // @CREATE STOCK
 exports.createStock = asyncHandler(async (req, res) => {
   const { medicines, quantity, stockAddAt } = req.body;
-  const result = await Stock.create({ medicines, quantity, stockAddAt });
+  const result = await Stock.save({ medicines, quantity, stockAddAt });
   res.status(201).json({ result });
 });

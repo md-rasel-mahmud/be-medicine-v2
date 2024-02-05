@@ -1,5 +1,8 @@
 const router = require("express").Router();
-const { userAuthenticate } = require("../middlewares/authenticate");
+const {
+  userAuthenticate,
+  adminAuthenticate,
+} = require("../middlewares/authenticate");
 
 const {
   getAllUnit,
@@ -7,8 +10,9 @@ const {
   deleteUnit,
 } = require("../controllers/unitController");
 
+// =================== ROUTES ===================
 router.get("/unit/all", userAuthenticate, getAllUnit);
-router.post("/unit", userAuthenticate, createUnit);
-router.delete("/unit/:id", userAuthenticate, deleteUnit);
+router.post("/unit", adminAuthenticate, createUnit);
+router.delete("/unit/:id", adminAuthenticate, deleteUnit);
 
 module.exports = router;

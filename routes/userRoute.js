@@ -12,8 +12,10 @@ const {
   updateUserRole,
 } = require("../controllers/userController");
 
+// =================== ROUTES ===================
 router.post("/login", loginUser);
 router.post("/register", registerUser);
+
 router.get("/user/all", adminAuthenticate, getUsers);
 router.get("/user/:id", userAuthenticate, getSingleUser);
 router.put("/user/:id", userAuthenticate, updateUser);

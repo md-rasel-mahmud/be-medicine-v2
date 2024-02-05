@@ -28,8 +28,10 @@ exports.createSupplier = asyncHandler(async (req, res) => {
     description,
   });
 
-  const result = await newSupplier.save().select({ __v: 0 });
+  // SAVE TO DATABASE
+  const result = await newSupplier.save();
 
+  // SEND RESPONSE
   res.status(201).json({ result, message: "Supplier added successfully" });
 });
 
@@ -42,14 +44,14 @@ exports.updateSupplier = asyncHandler(async (req, res) => {
     id,
     { name, email, phone, address, description },
     { new: true }
-  );
+  ).select({ __v: 0 });
 
-  res.status(200).json({ result });
+  res.status(200).json({ result, message: "Supplier updated successfully" });
 });
 
 // @DELETE SUPPLIER
 exports.deleteSupplier = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const result = await Supplier.findByIdAndDelete(id);
-  res.status(200).json({ result });
+  const result = await Supplier.findByIdAndDelete(id).select({ __v: 0 });
+  res.status(200).json({ result, message: "Supplier deleted successfully" });
 });
