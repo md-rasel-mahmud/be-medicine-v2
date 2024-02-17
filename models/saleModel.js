@@ -17,19 +17,42 @@ const saleModel = mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
-    medicine: [
+    customerName: {
+      type: String,
+      required: [true, "Please add a customer name"],
+      default: "Unknown Customer",
+    },
+    medicines: [
       {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Medicine",
-        required: true,
+        medicine: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Medicine",
+        },
+        saleQuantity: {
+          type: Number,
+          required: [true, "Please add a quantity"],
+        },
+        stockAddedAt: {
+          type: Date,
+          default: Date.now,
+        },
       },
     ],
-    quantity: {
-      type: Number,
-      required: [true, "Please add a quantity"],
-    },
   },
-
   { timestamps: true }
 );
+
+// create a dummy demo sale for testing postman following schema
+// {
+//   "invoiceNo": "123",
+//   "totalAmount": 123,
+//   "description": "test",
+//   "medicines": [
+//     {
+//       "medicine": "60c3f6c7b4e3a5d9d4f1e6d6",
+//       "saleQuantity": 1
+//     }
+//   ]
+// }
+
 module.exports = mongoose.model("Sale", saleModel);

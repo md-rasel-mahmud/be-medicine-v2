@@ -17,11 +17,23 @@ const purchaseModel = mongoose.Schema(
       type: String,
       required: [true, "Please add a description"],
     },
-    stock: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Stock",
-      required: true,
-    },
+    stocks: [
+      {
+        medicine: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Medicine",
+          required: [true, "Please add the Medicine"],
+        },
+        quantity: {
+          type: Number,
+          required: [true, "Please add the Medicine Quantity"],
+        },
+        expireDate: {
+          type: Date,
+          required: [true, "Please add the Medicine Expire Date"],
+        },
+      },
+    ],
     supplier: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Supplier",
@@ -40,7 +52,6 @@ const purchaseModel = mongoose.Schema(
       required: [true, "Please add a global discount"],
     },
   },
-
   { timestamps: true }
 );
 

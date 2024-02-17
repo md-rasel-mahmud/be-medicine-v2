@@ -39,7 +39,7 @@ exports.getSingleMedicine = asyncHandler(async (req, res) => {
 
 // @CREATE MEDICINE
 exports.createMedicine = asyncHandler(async (req, res) => {
-  const result = await Medicine.create(req.body).select({ __v: 0 });
+  const result = await Medicine.create(req.body);
   res.status(201).json({ message: "Medicine Create Successfully", result });
 });
 

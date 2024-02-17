@@ -9,8 +9,8 @@ exports.getStocks = asyncHandler(async (req, res) => {
   if (!page || !limit) {
     const result = await Stock.find()
       .select({ __v: 0 })
-      .sort({ stockAddedAt: -1 })
-      .populate("medicines.medicine", "name groupName -_id");
+      .sort({ stockAddedAt: -1 });
+    // .populate("medicines.medicine");
 
     return res.status(200).json({ result });
   }
@@ -19,7 +19,7 @@ exports.getStocks = asyncHandler(async (req, res) => {
   const result = await Stock.find()
     .select({ __v: 0 })
     .sort({ stockAddedAt: -1 })
-    .populate("medicines.medicine", "name groupName -_id")
+    .populate("medicines.medicine")
     .limit(limit * 1)
     .skip((page - 1) * limit);
 
@@ -38,7 +38,7 @@ exports.getSingleStock = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const result = await Stock.findById(id)
     .select({ __v: 0 })
-    .populate("medicines.medicine", "name groupName -_id");
+    .populate("medicines.medicine");
 
   res.status(200).json({ result: result || {} });
 });
@@ -65,7 +65,10 @@ exports.deleteStock = asyncHandler(async (req, res) => {
 
 // @CREATE STOCK
 exports.createStock = asyncHandler(async (req, res) => {
-  const { medicines, quantity, stockAddAt } = req.body;
-  const result = await Stock.save({ medicines, quantity, stockAddAt });
+  const saveStock = await Stock.create(req.body);
+
+  const result = await Stock.findById(saveStock._id)
+    .populate("medicines.medicine", "-__v")
+    .select({ __v: 0 });
   res.status(201).json({ result });
 });

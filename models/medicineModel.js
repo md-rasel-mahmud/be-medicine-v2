@@ -33,4 +33,12 @@ const medicineSchema = mongoose.Schema({
   },
 });
 
+// create index for search feature
+medicineSchema.index({
+  name: "text",
+  groupName: "text",
+  brandName: "text",
+  selfNo: "text",
+});
+
 module.exports = mongoose.model("Medicine", medicineSchema);

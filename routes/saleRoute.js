@@ -2,10 +2,10 @@ const router = require("express").Router();
 const { userAuthenticate } = require("../middlewares/authenticate");
 const {
   getSales,
+  createSale,
+  getSingleSale,
   updateSale,
   deleteSale,
-  getSingleSale,
-  createSale,
 } = require("../controllers/saleController");
 
 // =================== ROUTES ===================

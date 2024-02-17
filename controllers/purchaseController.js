@@ -8,15 +8,7 @@ exports.getAllPurchase = asyncHandler(async (req, res) => {
 
   if (page && limit) {
     const result = await Purchase.find()
-      .populate({
-        path: "stock",
-        populate: {
-          path: "medicines.medicine",
-          model: "Medicine",
-          select: "-__v",
-        },
-        select: "-__v",
-      })
+      .populate("stocks.medicine", "-__v")
       .populate("supplier", "-__v")
       .populate("user", "-__v -password")
       .select({ __v: 0 })
@@ -28,15 +20,7 @@ exports.getAllPurchase = asyncHandler(async (req, res) => {
 
   // POPULATE THE STOCK, MEDICINE, USER
   const result = await Purchase.find()
-    .populate({
-      path: "stock",
-      populate: {
-        path: "medicines.medicine",
-        model: "Medicine",
-        select: "-__v",
-      },
-      select: "-__v",
-    })
+    .populate("stocks.medicine", "-__v")
     .populate("supplier", "-__v")
     .populate("user", "-__v -password")
     .select({ __v: 0 });
@@ -60,16 +44,18 @@ exports.createPurchase = asyncHandler(async (req, res) => {
     purchaseNo,
     totalAmount,
     description,
-    purchaseStocks,
+    stocks,
     supplier,
     shippingCost,
     globalDiscount,
   } = req.body;
 
   // SAVE THE MEDICINE TO THE STOCK
-  const newStock = new Stock(purchaseStocks);
-  const insertedStock = await newStock.save();
-  const insertedStockId = insertedStock._id;
+  const newStock = new Stock({
+    medicines: [...stocks],
+    stockAddedAt: purchaseDate,
+  });
+  await newStock.save();
 
   // PREPARE THE PURCHASE DATA
   const newPurchase = new Purchase({
@@ -77,25 +63,17 @@ exports.createPurchase = asyncHandler(async (req, res) => {
     purchaseNo,
     totalAmount,
     description,
-    stock: insertedStockId,
+    stocks,
     supplier,
-    user: req.user._id,
     shippingCost,
     globalDiscount,
+    user: req.user._id,
   });
 
   // SAVE THE PURCHASE AND POPULATE THE STOCK, MEDICINES.MEDICINE, SUPPLIER, USER
   const insertPurchaseData = await newPurchase.save();
   const result = await Purchase.findById(insertPurchaseData._id)
-    .populate({
-      path: "stock",
-      populate: {
-        path: "medicines.medicine",
-        model: "Medicine",
-        select: "-__v",
-      },
-      select: "-__v",
-    })
+    .populate("stocks.medicine", "-__v ")
     .populate("supplier", "-__v")
     .populate("user", "-__v -password")
     .select({ __v: 0 });
@@ -115,15 +93,7 @@ exports.updatePurchase = asyncHandler(async (req, res) => {
     },
     { new: true }
   )
-    .populate({
-      path: "stock",
-      populate: {
-        path: "medicines.medicine",
-        model: "Medicine",
-        select: "-__v",
-      },
-      select: "-__v",
-    })
+    .populate("stocks.medicine", "-__v ")
     .populate("supplier", "-__v")
     .populate("user", "-__v -password");
 

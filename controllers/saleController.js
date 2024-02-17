@@ -1,19 +1,30 @@
 const asyncHandler = require("express-async-handler");
-
-const Sale = require("../models/Sale");
+const Sale = require("../models/saleModel");
+const Stock = require("../models/stockModel");
 
 // @GET ALL SALES
 
-module.exports.getSales = asyncHandler(async (req, res) => {
-  const sales = await Sale.find({});
-  res.json(sales);
+exports.getSales = asyncHandler(async (req, res) => {
+  const { page, limit } = req.query;
+
+  if (!page || !limit) {
+    const result = await Sale.find().select("-__v");
+    res.json({ result });
+  }
+
+  const result = await Sale.find()
+    .select("-__v")
+    .limit(limit * 1)
+    .skip((page - 1) * limit);
+
+  res.json({ result });
 });
 
 // @GET SINGLE SALE
-module.exports.getSingleSale = asyncHandler(async (req, res) => {
-  const sale = await Sale.findById(req.params.id);
-  if (sale) {
-    res.json(sale);
+exports.getSingleSale = asyncHandler(async (req, res) => {
+  const result = await Sale.findById(req.params.id).select("-__v");
+  if (result) {
+    res.json({ result });
   } else {
     res.status(404);
     throw new Error("Sale not found");
@@ -21,52 +32,105 @@ module.exports.getSingleSale = asyncHandler(async (req, res) => {
 });
 
 // @CREATE SALE
-module.exports.createSale = asyncHandler(async (req, res) => {
-  const { name, price, quantity, total, payment, balance } = req.body;
+exports.createSale = asyncHandler(async (req, res) => {
+  const { invoiceNo, totalAmount, description, medicines } = req.body;
 
-  const sale = new Sale({
-    name,
-    price,
-    quantity,
-    total,
-    payment,
-    balance,
+  // Prepare bulk operations array for update and delete
+  const bulkOperations = [];
+
+  // Iterate over each sale item and prepare update and delete operations
+  for (const saleItem of medicines) {
+    bulkOperations.push({
+      updateOne: {
+        filter: {
+          "medicines.medicine": saleItem.medicine,
+          stockAddedAt: saleItem.stockAddedAt,
+          "medicines.quantity": { $gte: saleItem.saleQuantity }, // Ensure enough quantity is available
+        },
+        update: {
+          $inc: {
+            "medicines.$.quantity": -saleItem.saleQuantity,
+          },
+        },
+      },
+    });
+
+    bulkOperations.push({
+      updateOne: {
+        filter: {
+          "medicines.medicine": saleItem.medicine,
+          stockAddedAt: saleItem.stockAddedAt,
+          "medicines.quantity": 0, // Remove items with zero quantity
+        },
+        update: {
+          $pull: {
+            medicines: { quantity: 0 },
+          },
+        },
+      },
+    });
+  }
+
+  // Perform bulk write operation
+  await Stock.bulkWrite(bulkOperations);
+
+  // Remove stock with empty medicines array
+  await Stock.deleteMany({ medicines: { $size: 0 } });
+
+  // Query the updated stock data
+  const updatedStockData = await Stock.find({
+    $or: bulkOperations.map((op) => op.updateOne.filter),
   });
 
-  const createdSale = await sale.save();
-  res.status(201).json(createdSale);
+  // Create sale document
+  const saleData = new Sale({
+    invoiceNo,
+    totalAmount,
+    description,
+    medicines,
+    user: req.user._id,
+  });
+
+  // Save sale document
+  const insertedSale = await saleData.save();
+
+  // Populate and return sale result
+  const result = await Sale.findById(insertedSale._id)
+    .populate("medicines.medicine", "-__v")
+    .select("-__v");
+
+  res.status(201).json({
+    result,
+    updatedStockData, // Include updated stock data in the response
+    message: "Medicine Sale Successfully",
+  });
 });
 
 // @UPDATE SALE
-module.exports.updateSale = asyncHandler(async (req, res) => {
-  const { name, price, quantity, total, payment, balance } = req.body;
+exports.updateSale = asyncHandler(async (req, res) => {
+  const { customerName, description } = req.body;
 
-  const sale = await Sale.findById(req.params.id);
+  const result = await Sale.findByIdAndUpdate(
+    { _id: id },
+    { customerName, description },
+    { new: true }
+  );
 
-  if (sale) {
-    sale.name = name;
-    sale.price = price;
-    sale.quantity = quantity;
-    sale.total = total;
-    sale.payment = payment;
-    sale.balance = balance;
-
-    const updatedSale = await sale.save();
-    res.json(updatedSale);
-  } else {
-    res.status(404);
-    throw new Error("Sale not found");
-  }
+  res.json({ result, message: "Sale updated Successfully" });
 });
 
 // @DELETE SALE
-module.exports.deleteSale = asyncHandler(async (req, res) => {
-  const sale = await Sale.findById(req.params.id);
-  if (sale) {
-    await sale.remove();
-    res.json({ message: "Sale removed" });
-  } else {
+exports.deleteSale = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  // -> CHECK IS THE DATA IS EXIST ONE DATABASE IF NOT FOUND THEN RESPONSE THE NOT FOUND ERROR
+  const isNotExist = await Sale.findById({ _id: id });
+  if (!isNotExist) {
     res.status(404);
-    throw new Error("Sale not found");
+    throw new Error("Sale Data for Delete not found!");
   }
+
+  // -> SEND THE SUCCESSFULLY DELETE RESPONSE
+  const result = await Sale.deleteOne({ _id: id });
+  res.status(200).send({ result, message: "Sale Data Deleted Successfully" });
 });
