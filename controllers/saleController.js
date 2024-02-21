@@ -5,17 +5,54 @@ const Stock = require("../models/stockModel");
 // @GET ALL SALES
 
 exports.getSales = asyncHandler(async (req, res) => {
-  const { page, limit } = req.query;
+  const { page, limit, createdAt } = req.query;
 
-  if (!page || !limit) {
-    const result = await Sale.find().select("-__v");
-    res.json({ result });
+  // Define match condition based on query parameters
+  const match = {};
+  if (createdAt) {
+    const startOfDay = new Date(createdAt);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(createdAt);
+    endOfDay.setHours(23, 59, 59, 999);
+    match.createdAt = { $gte: startOfDay, $lte: endOfDay };
   }
 
-  const result = await Sale.find()
-    .select("-__v")
-    .limit(limit * 1)
-    .skip((page - 1) * limit);
+  // Aggregation pipeline stages
+  const pipeline = [];
+
+  // Match stage
+  pipeline.push({ $match: match });
+
+  // Optionally project fields
+  pipeline.push({ $project: { __v: 0 } });
+
+  // Pagination stage
+  if (page && limit) {
+    const pageNum = parseInt(page, 10) || 1;
+    const limitNum = parseInt(limit, 10) || 10;
+    pipeline.push({ $skip: (pageNum - 1) * limitNum });
+    pipeline.push({ $limit: limitNum });
+  }
+
+  // Execute aggregation pipeline
+  const result = await Sale.aggregate(pipeline);
+
+  // If createdAt is provided, fetch stock information
+  if (createdAt) {
+    for (const sale of result) {
+      for (const medicine of sale.medicines) {
+        const stockData = await Stock.findOne({
+          "medicines.medicine": medicine.medicine,
+        });
+        if (stockData) {
+          const stockMedicine = stockData.medicines.find(
+            (item) => item.medicine.toString() === medicine.medicine.toString()
+          );
+          medicine.stockQuantity = stockMedicine ? stockMedicine.quantity : 0;
+        }
+      }
+    }
+  }
 
   res.json({ result });
 });

@@ -42,17 +42,4 @@ const saleModel = mongoose.Schema(
   { timestamps: true }
 );
 
-// create a dummy demo sale for testing postman following schema
-// {
-//   "invoiceNo": "123",
-//   "totalAmount": 123,
-//   "description": "test",
-//   "medicines": [
-//     {
-//       "medicine": "60c3f6c7b4e3a5d9d4f1e6d6",
-//       "saleQuantity": 1
-//     }
-//   ]
-// }
-
 module.exports = mongoose.model("Sale", saleModel);
