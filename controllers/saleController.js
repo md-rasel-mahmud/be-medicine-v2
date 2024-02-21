@@ -54,7 +54,16 @@ exports.getSales = asyncHandler(async (req, res) => {
     }
   }
 
-  res.json({ result });
+  res.json({
+    result,
+    pagination: {
+      currentPage: parseInt(page) || 1,
+      totalPages: Math.ceil(
+        (await Sale.countDocuments(match)) / parseInt(limit) || 10
+      ),
+      totalData: await Sale.count,
+    },
+  });
 });
 
 // @GET SINGLE SALE
@@ -70,7 +79,7 @@ exports.getSingleSale = asyncHandler(async (req, res) => {
 
 // @CREATE SALE
 exports.createSale = asyncHandler(async (req, res) => {
-  const { invoiceNo, totalAmount, description, medicines } = req.body;
+  const { invoiceNo, totalAmount, discount, description, medicines } = req.body;
 
   // Prepare bulk operations array for update and delete
   const bulkOperations = [];
@@ -125,6 +134,7 @@ exports.createSale = asyncHandler(async (req, res) => {
     totalAmount,
     description,
     medicines,
+    discount,
     user: req.user._id,
   });
 

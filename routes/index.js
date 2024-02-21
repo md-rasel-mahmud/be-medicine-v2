@@ -9,9 +9,19 @@ const stock = require("./stockRoute");
 const purchase = require("./purchaseRoute");
 const supplier = require("./supplierRoute");
 const sale = require("./saleRoute");
+const dashboard = require("./dashboardRoute");
 
 // ====================== ROUTES ======================
-const routes = [medicine, user, unit, stock, purchase, supplier, sale];
+const routes = [
+  medicine,
+  user,
+  unit,
+  stock,
+  purchase,
+  supplier,
+  sale,
+  dashboard,
+];
 
 // ====================== INITIAL ROUTES ======================
 const initialRoutes = (app) => {

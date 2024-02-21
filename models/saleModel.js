@@ -9,6 +9,11 @@ const saleModel = mongoose.Schema(
       type: Number,
       required: [true, "Please add a total amount"],
     },
+    discount: {
+      type: Number,
+      required: [true, "Please add a discount amount"],
+      default: 0,
+    },
     description: {
       type: String,
       required: [true, "Please add a description"],

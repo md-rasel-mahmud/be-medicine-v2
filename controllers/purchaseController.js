@@ -5,6 +5,8 @@ const Stock = require("../models/stockModel");
 // @GET ALL PURCHASE
 exports.getAllPurchase = asyncHandler(async (req, res) => {
   const { page, limit } = req.query;
+  const intPage = parseInt(page);
+  const intLimit = parseInt(limit);
 
   if (page && limit) {
     const result = await Purchase.find()
@@ -12,10 +14,17 @@ exports.getAllPurchase = asyncHandler(async (req, res) => {
       .populate("supplier", "-__v")
       .populate("user", "-__v -password")
       .select({ __v: 0 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
+      .limit(intLimit * 1)
+      .skip((intPage - 1) * intLimit);
 
-    return res.status(200).json({ result });
+    return res.status(200).json({
+      result,
+      pagination: {
+        currentPage: intPage,
+        totalPages: Math.ceil((await Purchase.countDocuments()) / intLimit),
+        totalData: await Medicine.countDocuments(),
+      },
+    });
   }
 
   // POPULATE THE STOCK, MEDICINE, USER

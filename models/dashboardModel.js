@@ -22,9 +22,21 @@ const dashboardSchema = mongoose.Schema({
       type: Number,
     },
   },
+  purchase: {
+    type: object,
+    totalPurchase: {
+      type: Number,
+    },
+    monthlyPurchase: {
+      type: Number,
+    },
+  },
+  supplier: {
+    type: object,
+    totalSupplier: {
+      type: Number,
+    },
+  },
 });
-
-// create index for search feature
-dashboardSchema.index({});
 
 module.exports = mongoose.model("Dashboard", dashboardSchema);

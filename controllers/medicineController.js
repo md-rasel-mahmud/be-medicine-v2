@@ -4,6 +4,8 @@ const asyncHandler = require("express-async-handler");
 // @GET ALL MEDICINE
 exports.getMedicines = asyncHandler(async (req, res) => {
   const { page, limit } = req.query;
+  const intPage = parseInt(page);
+  const intLimit = parseInt(limit);
 
   // -> WITHOUT PAGINATION
   if (!page || !limit) {
@@ -15,14 +17,14 @@ exports.getMedicines = asyncHandler(async (req, res) => {
   // -> PAGINATION
   const result = await Medicine.find()
     .select({ __v: 0 })
-    .limit(limit * 1)
-    .skip((page - 1) * limit);
+    .limit(parseInt(intLimit) * 1)
+    .skip((parseInt(intPage) - 1) * parseInt(intLimit));
 
   res.status(200).json({
     result,
     pagination: {
-      currentPage: page,
-      totalPages: Math.ceil((await Medicine.countDocuments()) / limit),
+      currentPage: intPage,
+      totalPages: Math.ceil((await Medicine.countDocuments()) / intLimit),
       totalData: await Medicine.countDocuments(),
     },
   });
@@ -50,7 +52,7 @@ exports.updateMedicine = asyncHandler(async (req, res) => {
   // find data and if data not found then trow error
   const findMedicine = await Medicine.findById(id);
   if (!findMedicine) {
-    res.send(404);
+    res.status(404);
     throw new Error("Medicine Not found for Update!");
   }
 

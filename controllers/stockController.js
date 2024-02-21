@@ -4,6 +4,8 @@ const Stock = require("../models/stockModel");
 // @GET STOCKS
 exports.getStocks = asyncHandler(async (req, res) => {
   const { page, limit } = req.query;
+  const intPage = parseInt(page);
+  const intLimit = parseInt(limit);
 
   // -> WITHOUT PAGINATION
   if (!page || !limit) {
@@ -20,14 +22,14 @@ exports.getStocks = asyncHandler(async (req, res) => {
     .select({ __v: 0 })
     .sort({ stockAddedAt: -1 })
     .populate("medicines.medicine")
-    .limit(limit * 1)
-    .skip((page - 1) * limit);
+    .limit(intLimit * 1)
+    .skip((intPage - 1) * intLimit);
 
   res.status(200).json({
     result,
     pagination: {
       currentPage: page,
-      totalPages: Math.ceil((await Stock.countDocuments()) / limit),
+      totalPages: Math.ceil((await Stock.countDocuments()) / intLimit),
       totalData: await Stock.countDocuments(),
     },
   });
