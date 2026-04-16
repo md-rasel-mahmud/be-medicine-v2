@@ -1,1 +1,10 @@
 node_modules
+.vercel
+
+
+# Ignore .env files
+.env
+
+# ignore lock files
+package-lock.json
+yarn.lock

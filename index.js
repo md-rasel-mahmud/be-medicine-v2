@@ -22,3 +22,5 @@ connectDB();
 
 // ==================== ROUTES ====================
 initialRoutes(app);
+
+module.exports = app;
