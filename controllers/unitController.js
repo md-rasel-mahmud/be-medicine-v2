@@ -12,7 +12,8 @@ exports.getAllUnit = asyncHandler(async (req, res) => {
 // @CREATE UNIT
 exports.createUnit = asyncHandler(async (req, res) => {
   // -> CREATE UNIT
-  const result = await Unit.create(req.body).select({ __v: 0 });
+  const createdUnit = await Unit.create(req.body);
+  const { __v, ...result } = createdUnit.toObject();
 
   res.status(201).json({ message: "Unit Created Successfully", result });
 });

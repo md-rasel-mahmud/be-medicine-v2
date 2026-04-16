@@ -11,8 +11,8 @@ exports.getStocks = asyncHandler(async (req, res) => {
   if (!page || !limit) {
     const result = await Stock.find()
       .select({ __v: 0 })
-      .sort({ stockAddedAt: -1 });
-    // .populate("medicines.medicine");
+      .sort({ stockAddedAt: -1 })
+      .populate("medicines.medicine");
 
     return res.status(200).json({ result });
   }
@@ -52,7 +52,7 @@ exports.updateStock = asyncHandler(async (req, res) => {
   const result = await Stock.findByIdAndUpdate(
     id,
     { quantity, price },
-    { new: true }
+    { new: true },
   );
 
   res.status(200).json({ result });

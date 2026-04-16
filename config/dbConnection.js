@@ -3,18 +3,15 @@ const mongoose = require("mongoose");
 const connectDB = async () => {
   try {
     // DD connection
-    const connectToDB = await mongoose.connect(
-      `${process.env.MONGODB_URI}/medicineV2`,
-      {
-        w: "majority",
-      }
-    );
+    const connectToDB = await mongoose.connect(`${process.env.MONGODB_URI}`, {
+      w: "majority",
+    });
     console.log(
       "MongoDB Connected: ",
       "Host -",
       connectToDB.connection.host,
       ", DB Name -",
-      connectToDB.connection.name
+      connectToDB.connection.name,
     );
   } catch (err) {
     console.log(err);

@@ -22,7 +22,7 @@ exports.getAllPurchase = asyncHandler(async (req, res) => {
       pagination: {
         currentPage: intPage,
         totalPages: Math.ceil((await Purchase.countDocuments()) / intLimit),
-        totalData: await Medicine.countDocuments(),
+        totalData: await Purchase.countDocuments(),
       },
     });
   }
@@ -59,9 +59,20 @@ exports.createPurchase = asyncHandler(async (req, res) => {
     globalDiscount,
   } = req.body;
 
+  if (!Array.isArray(stocks) || !stocks.length) {
+    res.status(400);
+    throw new Error("At least one stock item is required for purchase");
+  }
+
+  const normalizedStocks = stocks.map((item) => ({
+    medicine: item.medicine,
+    quantity: Number(item.quantity),
+    expireDate: item.expireDate,
+  }));
+
   // SAVE THE MEDICINE TO THE STOCK
   const newStock = new Stock({
-    medicines: [...stocks],
+    medicines: [...normalizedStocks],
     stockAddedAt: purchaseDate,
   });
   await newStock.save();
@@ -72,7 +83,7 @@ exports.createPurchase = asyncHandler(async (req, res) => {
     purchaseNo,
     totalAmount,
     description,
-    stocks,
+    stocks: normalizedStocks,
     supplier,
     shippingCost,
     globalDiscount,
@@ -100,7 +111,7 @@ exports.updatePurchase = asyncHandler(async (req, res) => {
     {
       description,
     },
-    { new: true }
+    { new: true },
   )
     .populate("stocks.medicine", "-__v ")
     .populate("supplier", "-__v")
