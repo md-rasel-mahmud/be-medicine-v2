@@ -31,8 +31,12 @@ const userSchema = mongoose.Schema(
       enum: ["STAFF", "ADMIN"],
       default: "STAFF",
     },
+    approved: {
+      type: Boolean,
+      default: false,
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 module.exports = mongoose.model("User", userSchema);

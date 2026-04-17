@@ -7,27 +7,50 @@ exports.getMedicines = asyncHandler(async (req, res) => {
   const intPage = parseInt(page);
   const intLimit = parseInt(limit);
 
-  // -> WITHOUT PAGINATION
+  let result, currentPage, totalPages, totalData, limitValue;
   if (!page || !limit) {
-    const result = await Medicine.find().select({ __v: 0 });
-
-    return res.status(200).json({ result });
+    result = await Medicine.find().select({ __v: 0 });
+    currentPage = 1;
+    totalData = result.length;
+    limitValue = totalData;
+    totalPages = 1;
+  } else {
+    result = await Medicine.find()
+      .select({ __v: 0 })
+      .limit(intLimit * 1)
+      .skip((intPage - 1) * intLimit);
+    currentPage = intPage;
+    totalData = await Medicine.countDocuments();
+    limitValue = intLimit;
+    totalPages = Math.ceil(totalData / intLimit);
   }
-
-  // -> PAGINATION
-  const result = await Medicine.find()
-    .select({ __v: 0 })
-    .limit(parseInt(intLimit) * 1)
-    .skip((parseInt(intPage) - 1) * parseInt(intLimit));
-
   res.status(200).json({
     result,
     pagination: {
-      currentPage: intPage,
-      totalPages: Math.ceil((await Medicine.countDocuments()) / intLimit),
-      totalData: await Medicine.countDocuments(),
+      currentPage,
+      totalPages,
+      totalData,
+      limit: limitValue,
     },
   });
+});
+
+// @GET MEDICINES BY IDS from  params
+exports.getMedicinesByIds = asyncHandler(async (req, res) => {
+  const { ids } = req.query;
+
+  if (!ids) {
+    res.status(400);
+    throw new Error("IDs query parameter is required.");
+  }
+
+  const idsArray = ids.split(",").map((id) => id.trim());
+
+  const result = await Medicine.find({ _id: { $in: idsArray } }).select({
+    __v: 0,
+  });
+
+  res.status(200).json({ result });
 });
 
 // @GET SINGLE MEDICINE BY ID
@@ -78,4 +101,20 @@ exports.deleteMedicine = asyncHandler(async (req, res) => {
   // delete data and send response
   const result = await Medicine.deleteOne({ _id: id }).select({ __v: 0 });
   res.status(200).json({ message: "Medicine Delete Successfully", result });
+});
+
+// @IMPORT MEDICINE
+exports.importMedicines = asyncHandler(async (req, res) => {
+  const { medicines } = req.body;
+
+  if (!medicines || !Array.isArray(medicines) || medicines.length === 0) {
+    res.status(400);
+    throw new Error("Medicines array is required to process imports.");
+  }
+
+  const result = await Medicine.insertMany(medicines);
+  res.status(201).json({
+    message: `${result.length} Medicines imported successfully`,
+    result,
+  });
 });

@@ -8,33 +8,39 @@ exports.getAllPurchase = asyncHandler(async (req, res) => {
   const intPage = parseInt(page);
   const intLimit = parseInt(limit);
 
+  let result, currentPage, totalPages, totalData, limitValue;
   if (page && limit) {
-    const result = await Purchase.find()
+    result = await Purchase.find()
       .populate("stocks.medicine", "-__v")
       .populate("supplier", "-__v")
       .populate("user", "-__v -password")
       .select({ __v: 0 })
       .limit(intLimit * 1)
       .skip((intPage - 1) * intLimit);
-
-    return res.status(200).json({
-      result,
-      pagination: {
-        currentPage: intPage,
-        totalPages: Math.ceil((await Purchase.countDocuments()) / intLimit),
-        totalData: await Purchase.countDocuments(),
-      },
-    });
+    currentPage = intPage;
+    totalData = await Purchase.countDocuments();
+    limitValue = intLimit;
+    totalPages = Math.ceil(totalData / intLimit);
+  } else {
+    result = await Purchase.find()
+      .populate("stocks.medicine", "-__v")
+      .populate("supplier", "-__v")
+      .populate("user", "-__v -password")
+      .select({ __v: 0 });
+    currentPage = 1;
+    totalData = result.length;
+    limitValue = totalData;
+    totalPages = 1;
   }
-
-  // POPULATE THE STOCK, MEDICINE, USER
-  const result = await Purchase.find()
-    .populate("stocks.medicine", "-__v")
-    .populate("supplier", "-__v")
-    .populate("user", "-__v -password")
-    .select({ __v: 0 });
-
-  res.status(200).json({ result });
+  res.status(200).json({
+    result,
+    pagination: {
+      currentPage,
+      totalPages,
+      totalData,
+      limit: limitValue,
+    },
+  });
 });
 
 // @GET SINGLE PURCHASE BY ID

@@ -23,10 +23,16 @@ exports.loginUser = asyncHandler(async (req, res) => {
     throw new Error("User not found!");
   }
 
+  // -> CHECK APPROVED
+  if (!findUser[0].approved) {
+    res.status(403);
+    throw new Error("Account not approved by admin yet.");
+  }
+
   // -> COMPARE PASSWORD
   const isMatchPassword = await bcrypt.compare(
     password,
-    findUser?.[0].password
+    findUser?.[0].password,
   );
 
   if (!isMatchPassword) {
@@ -43,10 +49,28 @@ exports.loginUser = asyncHandler(async (req, res) => {
     process.env.JWT_SECRET,
     {
       expiresIn: "7d",
-    }
+    },
   );
 
   res.status(200).json({ message: "Login Successfully", result, token });
+});
+
+// @APPROVE USER (ADMIN ONLY)
+exports.approveUser = asyncHandler(async (req, res) => {
+  // -> FIND USER BY ID
+  const user = await User.findById(req.params.id);
+
+  // -> CHECK USER EXIST OR NOT
+  if (!user) {
+    res.status(404);
+    throw new Error("User not found!");
+  }
+
+  // -> UPDATE APPROVED STATUS
+  user.approved = true;
+  await user.save();
+
+  res.status(200).json({ message: "User approved successfully", user });
 });
 
 // @REGISTER USER
@@ -58,6 +82,7 @@ exports.registerUser = asyncHandler(async (req, res) => {
   const user = new User({
     ...req.body,
     password: hashedPassword,
+    approved: false,
   });
 
   // -> SAVE USER TO DATABASE
@@ -69,7 +94,7 @@ exports.registerUser = asyncHandler(async (req, res) => {
     process.env.JWT_SECRET,
     {
       expiresIn: "7d",
-    }
+    },
   );
 
   // -> SEND RESPONSE
@@ -146,7 +171,7 @@ exports.updateUser = asyncHandler(async (req, res) => {
       phone,
       address,
     },
-    { new: true }
+    { new: true },
   ).select({ password: 0 });
 
   // -> SEND RESPONSE
@@ -172,7 +197,7 @@ exports.updateUserRole = asyncHandler(async (req, res) => {
     {
       role,
     },
-    { new: true }
+    { new: true },
   ).select({ password: 0 });
 
   // -> SEND RESPONSE

@@ -26,10 +26,9 @@ exports.getSales = asyncHandler(async (req, res) => {
   // Optionally project fields
   pipeline.push({ $project: { __v: 0 } });
 
-  // Pagination stage
+  let pageNum = parseInt(page, 10) || 1;
+  let limitNum = parseInt(limit, 10) || 10;
   if (page && limit) {
-    const pageNum = parseInt(page, 10) || 1;
-    const limitNum = parseInt(limit, 10) || 10;
     pipeline.push({ $skip: (pageNum - 1) * limitNum });
     pipeline.push({ $limit: limitNum });
   }
@@ -46,7 +45,7 @@ exports.getSales = asyncHandler(async (req, res) => {
         });
         if (stockData) {
           const stockMedicine = stockData.medicines.find(
-            (item) => item.medicine.toString() === medicine.medicine.toString()
+            (item) => item.medicine.toString() === medicine.medicine.toString(),
           );
           medicine.stockQuantity = stockMedicine ? stockMedicine.quantity : 0;
         }
@@ -54,14 +53,24 @@ exports.getSales = asyncHandler(async (req, res) => {
     }
   }
 
+  let totalData, totalPages;
+  if (page && limit) {
+    totalData = await Sale.countDocuments(match);
+    totalPages = Math.ceil(totalData / limitNum);
+  } else {
+    totalData = result.length;
+    totalPages = 1;
+    pageNum = 1;
+    limitNum = totalData;
+  }
+
   res.json({
     result,
     pagination: {
-      currentPage: parseInt(page) || 1,
-      totalPages: Math.ceil(
-        (await Sale.countDocuments(match)) / parseInt(limit) || 10
-      ),
-      totalData: await Sale.count,
+      currentPage: pageNum,
+      totalPages,
+      totalData,
+      limit: limitNum,
     },
   });
 });
@@ -160,7 +169,7 @@ exports.updateSale = asyncHandler(async (req, res) => {
   const result = await Sale.findByIdAndUpdate(
     { _id: id },
     { customerName, description },
-    { new: true }
+    { new: true },
   );
 
   res.json({ result, message: "Sale updated Successfully" });

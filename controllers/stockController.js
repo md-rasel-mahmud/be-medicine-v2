@@ -7,30 +7,35 @@ exports.getStocks = asyncHandler(async (req, res) => {
   const intPage = parseInt(page);
   const intLimit = parseInt(limit);
 
-  // -> WITHOUT PAGINATION
+  let result, currentPage, totalPages, totalData, limitValue;
   if (!page || !limit) {
-    const result = await Stock.find()
+    result = await Stock.find()
       .select({ __v: 0 })
       .sort({ stockAddedAt: -1 })
       .populate("medicines.medicine");
-
-    return res.status(200).json({ result });
+    currentPage = 1;
+    totalData = result.length;
+    limitValue = totalData;
+    totalPages = 1;
+  } else {
+    result = await Stock.find()
+      .select({ __v: 0 })
+      .sort({ stockAddedAt: -1 })
+      .populate("medicines.medicine")
+      .limit(intLimit * 1)
+      .skip((intPage - 1) * intLimit);
+    currentPage = intPage;
+    totalData = await Stock.countDocuments();
+    limitValue = intLimit;
+    totalPages = Math.ceil(totalData / intLimit);
   }
-
-  // -> PAGINATION
-  const result = await Stock.find()
-    .select({ __v: 0 })
-    .sort({ stockAddedAt: -1 })
-    .populate("medicines.medicine")
-    .limit(intLimit * 1)
-    .skip((intPage - 1) * intLimit);
-
   res.status(200).json({
     result,
     pagination: {
-      currentPage: page,
-      totalPages: Math.ceil((await Stock.countDocuments()) / intLimit),
-      totalData: await Stock.countDocuments(),
+      currentPage,
+      totalPages,
+      totalData,
+      limit: limitValue,
     },
   });
 });
